@@ -10,22 +10,36 @@ use Illuminate\View\View;
 
 class CustomersController extends Controller
 {
+    private CustomerFacade $customerFacade;
+
     public function __construct(
-        private readonly CustomerFacade $customerFacade,
+        CustomerFacade $customerFacade
     ) {
+        $this->customerFacade = $customerFacade;
     }
 
     public function index(Request $request): View
     {
         if ($request->has('sort')) {
-            $sort = match ($request->get('sort')) {
-                'name' => $this->customerFacade->getCustomerDebtsByName(),
-                'debta' => $this->customerFacade->getCustomerDebts(),
-                'debtd' => $this->customerFacade->getCustomerDebts('DESC'),
-            };
+            $sort = $request->get('sort');
+            switch ($sort) {
+                case 'name':
+                    $sortResult = $this->customerFacade->getCustomerDebtsByName();
+                    break;
+                case 'debta':
+                    $sortResult = $this->customerFacade->getCustomerDebts();
+                    break;
+                case 'debtd':
+                    $sortResult = $this->customerFacade->getCustomerDebts('DESC');
+                    break;
+                default:
+                    $sortResult = null;
+                    break;
+            }
+
 
             return view('index', [
-                'customers' => $sort,
+                'customers' => $sortResult,
                 'request' => $request->get('sort'),
                 'total' => $this->customerFacade->getTotalDebt(),
             ]);
@@ -43,6 +57,6 @@ class CustomersController extends Controller
         $debtor = $request->get('debtor');
         DB::insert('INSERT INTO customers (name) VALUES (?)', [$debtor]);
 
-        return to_route('homepage')->with('success', 'Účet založený!');
+        return redirect()->route('homepage')->with('success', 'Účet založený!');
     }
 }
