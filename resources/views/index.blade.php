@@ -104,9 +104,9 @@
                             {{$customer->name}}
                         </p>
                     </div>
-                    <span class="inline-flex items-center text-sm font-medium px-2.5 py-0.5 rounded-full bg-amber-600 text-white">
+                    <span id="debtValue-{{$customer->id}}" class="inline-flex items-center text-sm font-medium px-2.5 py-0.5 rounded-full text-white">
                         {{$customer->debt}} Kč
-                </span>
+                    </span>
                 </div>
                 <div>
                     <a data-modal-target="addItem-{{$customer->id}}" data-modal-toggle="addItem-{{$customer->id}}" href="#" class="text-white bg-green-700 font-medium rounded-lg text-sm p-2.5 text-center inline-flex items-center mr-2 ">
@@ -117,7 +117,7 @@
                     </a>
                 </div>
             </li>
-            <div id="addItem-{{$customer->id}}" tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 z-50 hidden w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full" style="top: -140px">
+            <div id="addItem-{{$customer->id}}" tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 z-50 hidden w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full">
                 <div class="relative w-full max-w-2xl max-h-full">
                     <div class="relative bg-white rounded-lg shadow">
                         <div class="flex items-start justify-between px-4 py-2 border-b rounded-t">
@@ -179,7 +179,7 @@
                                 {{csrf_field()}}
                                 <label for="item" class="block mb-2 text-sm font-medium text-gray-900">Jiná položka</label>
                                 <div class="flex mb-2 gap-x-4">
-                                    <input type="number" id="item" name="item" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5" placeholder="Kč" required>
+                                    <input type="number" pattern="[0-9]*" id="item" name="item" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5" placeholder="Kč" required>
                                     <button type="submit" class="w-1/3 text-white bg-blue-700 font-medium rounded-lg"><i class="fa-solid fa-arrow-right"></i></button>
                                 </div>
                             </form>
@@ -190,8 +190,53 @@
             </div>
         @endforeach
     </ul>
-
-
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.6.5/flowbite.min.js"></script>
+<script>
+    @foreach ($customers as $customer)
+        var debtValueElement{{$customer->id}} = document.getElementById('debtValue-{{$customer->id}}');
+        var debtValue{{$customer->id}} = parseInt(debtValueElement{{$customer->id}}.innerText);
+    @endforeach
+
+    var greenColor = [0, 128, 0];        // RGB value for green
+    var orangeColor = [255, 165, 0];     // RGB value for orange
+    var darkRedColor = [139, 0, 0];      // RGB value for dark red
+    var violetColor = [148, 0, 211];     // RGB value for violet
+
+    var colorRangeStart = 0;             // Start value of the color range
+    var colorRangeEnd = 5000;            // End value of the color range
+
+    @foreach ($customers as $customer)
+        var normalizedValue{{$customer->id}} = Math.max(0, Math.min((debtValue{{$customer->id}} - colorRangeStart) / (colorRangeEnd - colorRangeStart), 1));
+        var interpolatedColor{{$customer->id}} = interpolateColor(greenColor, orangeColor, darkRedColor, violetColor, normalizedValue{{$customer->id}});
+
+        debtValueElement{{$customer->id}}.style.backgroundColor = 'rgb(' + interpolatedColor{{$customer->id}}.join(',') + ')';
+    @endforeach
+
+    function interpolateColor(color1, color2, color3, color4, value) {
+        if (value < 0.25) {
+            value *= 2;
+            var r = Math.round(color1[0] + (color2[0] - color1[0]) * value);
+            var g = Math.round(color1[1] + (color2[1] - color1[1]) * value);
+            var b = Math.round(color1[2] + (color2[2] - color1[2]) * value);
+        } else if (value < 0.5) {
+            value = (value - 0.25) * 2;
+            var r = Math.round(color2[0] + (color3[0] - color2[0]) * value);
+            var g = Math.round(color2[1] + (color3[1] - color2[1]) * value);
+            var b = Math.round(color2[2] + (color3[2] - color2[2]) * value);
+        } else if (value < 0.75) {
+            value = (value - 0.5) * 2;
+            var r = Math.round(color3[0] + (color4[0] - color3[0]) * value);
+            var g = Math.round(color3[1] + (color4[1] - color3[1]) * value);
+            var b = Math.round(color3[2] + (color4[2] - color3[2]) * value);
+        } else {
+            value = (value - 0.75) * 2;
+            var r = Math.round(color4[0] + (255 - color4[0]) * value);
+            var g = Math.round(color4[1] + (255 - color4[1]) * value);
+            var b = Math.round(color4[2] + (255 - color4[2]) * value);
+        }
+
+        return [r, g, b];
+    }
+</script>
 </body>
